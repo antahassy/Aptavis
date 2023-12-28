@@ -1,12 +1,38 @@
 @extends('admin_layout/index')
 @section('content')
 <style>
-    .thead-dark tr th{
+    .thead-dark th{
         color: #fff !important;
+    }
+    #table_skor tr th{
+        color: #fff;
+        background: #181C32;
+        text-align: center;
+        padding: 10px 5px;
+        border: 2px solid #fff;
+    }
+    #table_skor tr td{
+        text-align: center;
+        padding: 5px;
+        border: 2px solid black;
     }
     form label{
         margin-top: 5px;
         font-weight: 600 !important;
+    }
+    .input_klub_1, .input_klub_2{
+        padding: 5px; 
+        border:none; 
+        border-bottom: 2px dotted black;
+        text-align: center;
+        width: 80px;
+    }
+    .input_skor_1, .input_skor_2{
+        padding: 5px; 
+        border:none; 
+        border-bottom: 2px dotted black;
+        text-align: center;
+        width: 40px;
     }
 </style>
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
@@ -40,7 +66,7 @@
                 <div class="col-lg-12 col-xxl-4 order-1 order-xxl-2">
                     <div class="card card-custom card-stretch gutter-b">
                         <div class="card-header border-0">
-                            <h3 class="card-title font-weight-bolder text-dark">Daftar {{ $active_menu }}</h3>
+                            <h3 class="card-title font-weight-bolder text-dark">Daftar Klasemen</h3>
                         </div>
                         <div class="card-body pt-0">
                             <table id="table_data" class="table table-striped table-vcenter" style="width: 100%;">
@@ -54,9 +80,7 @@
                                         <th>Kalah</th>
                                         <th>Goal Menang</th>
                                         <th>Goal Kalah</th>
-                                        <th>Point</th>
-                                        <th>Tindakan</th> 
-                                        <th>Diupdate</th> 
+                                        <th>Poin</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -68,7 +92,7 @@
     </div>
 </div>
 <div class="modal animated" id="modal_form" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title"></h5>
@@ -78,9 +102,21 @@
                     <input type="hidden" id="id_data" name="id_data">
                     <input type="hidden" name="_method" id="_method">
                     <div class="form-group">
-                        <div class="col-md-12">
-                            
-                        </div>
+                            <table id="table_skor" style="width: 100%; margin-bottom: 25px;">
+                                <thead>
+                                    <tr>
+                                        <th>Klub 1</th>
+                                        <th>Klub 2</th>
+                                        <th>Skor 1</th>
+                                        <th>Skor 2</th>
+                                        <th style="color: transparent;">_</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody_skor">
+                                    
+                                </tbody>
+                            </table>
+                            <button type="button" class="btn btn-success" id="btn_add_row">Tambah</button>
                     </div>
                 </form>
             </div>

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
 use \App\Models\MA_skor; 
+use \App\Models\MA_klub; 
 use \App\Models\MA_admin; 
 
 class A_skor extends Controller
@@ -36,40 +37,43 @@ class A_skor extends Controller
                     array_push($akses_temp, $key->akses);
                 }
                 if (in_array('1', $akses_temp)){
-                    $data = DB::table('tb_skor')
-                    ->select('tb_skor.*', 'tb_klub.nama as klub')
-                    ->where('tb_skor.deleted_at', null)
-                    ->leftJoin('tb_klub', 'tb_skor.id_klub', '=', 'tb_klub.id')
-                    ->orderBy('tb_skor.id', 'asc')
+                    $data_a = DB::table('tb_skor')
+                    ->select('id_lawan');
+
+                    $data_b = DB::table('tb_skor')
+                    ->select('id_klub')
+                    ->union($data_a)
                     ->get();
-                    foreach ($data as $row) {
-                        $lawan = DB::table('tb_klub')
-                        ->select('nama as lawan')
-                        ->where('id', $row->id_lawan)
-                        ->first();
-                        $row->lawan = $lawan->lawan;
-                        $row->created = $row->created_by;
-                        if(is_numeric($row->created_by)){
-                            $created = DB::table('tb_admin')
-                            ->select('tb_admin.username')
-                            ->where('tb_admin.id', $row->created_by)
-                            ->first();
-                            $row->created = $created->username;
-                        }
-                        $row->updated = $row->updated_by;
-                        if(is_numeric($row->updated_by)){
-                            $updated = DB::table('tb_admin')
-                            ->select('tb_admin.username')
-                            ->where('tb_admin.id', $row->updated_by)
-                            ->first();
-                            $row->updated = $updated->username;
-                        }
+                    $data = $data_b;
+                    foreach($data as $row){
+                        $row->klub = MA_klub::select('nama')->where('id', $row->id_klub)->first()->nama;
+                        $row->main = MA_skor::where('id_klub', $row->id_klub)->orWhere('id_lawan', $row->id_klub)->count();
+                        $row->menang = MA_skor::where('id_klub_menang', $row->id_klub)->count();
+                        $row->kalah = MA_skor::where('id_klub_kalah', $row->id_klub)->count();
+                        $row->seri = $row->main - ($row->menang + $row->kalah);
+
+                        $goal_menang_1 = MA_skor::where('id_klub', $row->id_klub)->sum('skor');
+                        $goal_menang_2 = MA_skor::where('id_lawan', $row->id_klub)->sum('skor_lawan');
+                        $row->goal_menang = $goal_menang_1 + $goal_menang_2;
+
+                        $goal_kalah_1 = MA_skor::where('id_klub', $row->id_klub)->sum('skor_lawan');
+                        $goal_kalah_2 = MA_skor::where('id_lawan', $row->id_klub)->sum('skor');
+                        $row->goal_kalah = $goal_kalah_1 + $goal_kalah_2;
+
+                        $poin_1 = MA_skor::where('id_klub', $row->id_klub)->where('id_klub_menang', $row->id_klub)->sum('poin_menang');
+                        $poin_2 = MA_skor::where('id_klub', $row->id_klub)->where('id_klub_kalah', $row->id_klub)->sum('poin_kalah');
+                        $poin_3 = MA_skor::where('id_klub', $row->id_klub)->where('id_klub_menang', '0')->sum('poin_menang');
+                        $poin_4 = MA_skor::where('id_lawan', $row->id_klub)->where('id_klub_menang', $row->id_klub)->sum('poin_menang');
+                        $poin_5 = MA_skor::where('id_lawan', $row->id_klub)->where('id_klub_kalah', $row->id_klub)->sum('poin_kalah');
+                        $poin_6 = MA_skor::where('id_lawan', $row->id_klub)->where('id_klub_kalah', '0')->sum('poin_kalah');
+                        $row->poin = $poin_1 + $poin_2 + $poin_3 + $poin_4 + $poin_5 + $poin_6;
                     }
+                    $data = collect($data)->sortByDesc('poin');
                     if($request->ajax()){
                         return datatables()->of($data)->addIndexColumn()->toJson();
                         //return response()->json($data);
                     }
-                    return view('admin.klub')->with('active_menu', 'Klub')->with('akses_menu', $akses_temp);
+                    return view('admin.skor')->with('active_menu', 'Skor')->with('akses_menu', $akses_temp);
                 }else{
                     return view('unauthorized');
                 }
@@ -97,7 +101,49 @@ class A_skor extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $sess_id = Session::get('admin.id');
+        $sess_username = MA_admin::select('username')->where('id', $sess_id)->first()->username;
+        $data = $request->arr_skor;
+        for($i = 0; $i < count($data); $i ++){
+            $poin_menang = '3';
+            $poin_kalah = '0';
+            if((int)$data[$i]['skor_1'] == (int)$data[$i]['skor_2']){
+                $poin_menang = '1';
+                $poin_kalah = '1';
+                $klub_menang = '0';
+                $klub_kalah = '0';
+            }
+            if((int)$data[$i]['skor_1'] > (int)$data[$i]['skor_2']){
+                $klub_menang = $data[$i]['klub_1'];
+                $klub_kalah = $data[$i]['klub_2'];
+            }
+            if((int)$data[$i]['skor_1'] < (int)$data[$i]['skor_2']){
+                $klub_menang = $data[$i]['klub_2'];
+                $klub_kalah = $data[$i]['klub_1'];
+            }
+            $saved = MA_skor::create(
+                [
+                    'id_klub'           => $data[$i]['klub_1'],
+                    'id_lawan'          => $data[$i]['klub_2'],
+                    'id_klub_menang'    => $klub_menang,
+                    'id_klub_kalah'     => $klub_kalah,
+                    'poin_menang'       => $poin_menang,
+                    'poin_kalah'        => $poin_kalah,
+                    'skor'              => $data[$i]['skor_1'],
+                    'skor_lawan'        => $data[$i]['skor_2'],
+                    'created_by'        => $sess_id,
+                    'updated_by'        => $sess_id,
+                    'created_at'        => date('Y-m-d H:i:s'),
+                    'updated_at'        => date('Y-m-d H:i:s')
+                ]
+            );
+            if($i == (count($data) - 1) && $saved){
+                return response()->json([
+                    'success'   => true,
+                    'type'      => 'disimpan'
+                ]);
+            }
+        }
     }
 
     /**
@@ -143,5 +189,23 @@ class A_skor extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function autocomplete_klub(Request $request)
+    {
+        $data = DB::table('tb_klub')
+        ->select('nama')
+        ->where('nama', 'LIKE', '%'. $request->get('keyword') . '%')
+        ->get();
+        foreach ($data as $row){
+            $result[] = $row->nama;
+        }
+        return response()->json($result);
+    }
+
+    public function autocomplete_klub_id(Request $request)
+    {
+        $data = DB::table('tb_klub')->where('nama', $request->value)->first()->id;
+        return response()->json($data);
     }
 }

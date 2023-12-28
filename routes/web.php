@@ -52,6 +52,8 @@ Route::group(['middleware' => 'admin_session'], function() {
     Route::post('autocomplete_kota_id', [A_klub::class, 'autocomplete_kota_id']);
 
 	Route::resource('admin_skor', A_skor::class);
+	Route::get('autocomplete_klub', [A_skor::class, 'autocomplete_klub']);
+    Route::post('autocomplete_klub_id', [A_skor::class, 'autocomplete_klub_id']);
 	// Route::post('list_car/hapus', [A_car::class, 'hapus']);
 	// Route::post('list_car/merek', [A_car::class, 'merek']);
 	// Route::post('list_car/sewa', [A_car::class, 'sewa']);

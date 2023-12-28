@@ -17,10 +17,12 @@ return new class extends Migration
             $table->id();
             $table->integer('id_klub')->default('0');
             $table->integer('id_lawan')->default('0');
-            $table->enum('result', ['1', '2', '3'])->nullable();
+            $table->integer('id_klub_menang')->default('0');
+            $table->integer('id_klub_kalah')->default('0');
+            $table->integer('poin_menang')->default('0');
+            $table->integer('poin_kalah')->default('0');
             $table->integer('skor')->default('0');
             $table->integer('skor_lawan')->default('0');
-            $table->integer('point')->default('0');
             $table->string('created_by')->default('');
             $table->string('updated_by')->default('');
             $table->string('deleted_by')->default('');
