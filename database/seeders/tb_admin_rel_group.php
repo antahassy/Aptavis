@@ -49,5 +49,37 @@ class tb_admin_rel_group extends Seeder
                 ]);
             }
         }
+        //akses menu klub
+        for($x = 1; $x < 5; $x ++){
+            DB::table('tb_admin_rel_group')->insert([
+                'id_group' 			=> '1',
+                'id_menu' 			=> '7',
+                'akses' 			=> $x,
+                'created_by'        => 'System',
+                'created_at'		=> date('Y-m-d H:i:s')
+            ]);
+        }
+        //akses menu skor
+        for($x = 1; $x < 5; $x ++){
+            if($x == 3 || $x == 4){
+                DB::table('tb_admin_rel_group')->insert([
+                    'id_group' 			=> '1',
+                    'id_menu' 			=> '8',
+                    'akses' 			=> $x,
+                    'created_by'        => 'System',
+                    'deleted_by'        => 'System',
+                    'created_at'		=> date('Y-m-d H:i:s'),
+                    'deleted_at'		=> date('Y-m-d H:i:s')
+                ]);
+            }else{
+                DB::table('tb_admin_rel_group')->insert([
+                    'id_group' 			=> '1',
+                    'id_menu' 			=> '8',
+                    'akses' 			=> $x,
+                    'created_by'        => 'System',
+                    'created_at'		=> date('Y-m-d H:i:s')
+                ]);
+            }
+        }
     }
 }
